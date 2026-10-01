@@ -1857,13 +1857,6 @@ SceneManager.checkFileAccess = function() {
     }
 };
 
-SceneManager.initAudio = function() {
-    var noAudio = Utils.isOptionValid('noaudio');
-    if (!WebAudio.initialize(noAudio) && !noAudio) {
-        throw new Error('Your browser does not support Web Audio API.');
-    }
-};
-
 SceneManager.initInput = function() {
     Input.initialize();
     TouchInput.initialize();
