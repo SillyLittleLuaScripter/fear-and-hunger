@@ -5493,8 +5493,10 @@ ShaderTilemap.prototype.constructor = ShaderTilemap;
 // we need this constant for some platforms (Samsung S4, S5, Tab4, HTC One H8)
 PIXI.glCore.VertexArrayObject.FORCE_NATIVE = true;
 PIXI.settings.GC_MODE = PIXI.GC_MODES.AUTO;
-PIXI.tilemap.TileRenderer.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
-PIXI.tilemap.TileRenderer.DO_CLEAR = true;
+if (PIXI.tilemap && PIXI.tilemap.TileRenderer) {
+    PIXI.tilemap.TileRenderer.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+    PIXI.tilemap.TileRenderer.DO_CLEAR = true;
+}
 
 /**
  * Uploads animation state in renderer
