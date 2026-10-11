@@ -26,13 +26,14 @@
         <script type="text/javascript" src="js/plugins.js"></script>
         <script type="text/javascript" src="js/main.js"></script>
     <!-- gn math patch -->
-    <script>
-        // full screen the game ----------------------------------------------------------
-       function applycanvasmode() {
-    let w = 0;
-    let h = 0;
-    let maxW = window.innerWidth;
-    let maxH = window.innerHeight;
+<!-- mobile + canvas patch -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+<script>
+// Safe canvas scaling
+function applycanvasmode() {
+    var maxW = window.innerWidth;
+    var maxH = window.innerHeight;
+    var w, h;
     if ((maxW * 0.75) > maxH) {
         h = maxH;
         w = Math.floor((maxH / 3) * 4);
@@ -40,102 +41,81 @@
         w = maxW;
         h = Math.floor((maxW / 4) * 3);
     }
-    let canvas = document.querySelector("#GameCanvas");
-    let video = document.querySelector("#GameVideo");
-    let upper = document.querySelector("#UpperCanvas");
-    if (canvas) {
-        canvas.style.width = w + "px";
-        canvas.style.height = h + "px";
-    }
-    if (video) {
-        video.style.width = w + "px";
-        video.style.height = h + "px";
-    }
-    if (upper) {
-        upper.style.width = w + "px";
-        upper.style.height = h + "px";
-    }
+    var canvas = document.querySelector("#GameCanvas");
+    var video  = document.querySelector("#GameVideo");
+    var upper  = document.querySelector("#UpperCanvas");
+    if (canvas) { canvas.style.width = w + "px"; canvas.style.height = h + "px"; }
+    if (video)  { video.style.width  = w + "px"; video.style.height  = h + "px"; }
+    if (upper)  { upper.style.width  = w + "px"; upper.style.height  = h + "px"; }
 }
-setInterval(applycanvasmode, 100); 
+setInterval(applycanvasmode, 200);
 
-        // support mobile ----------------------------------------------------------------
-        (function() {
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            if (!isMobile) {
-                return;
-            }
-            let i = setInterval(function() {
-                if (window.fullSetupComplete) {
-                    let zoneStatic = document.createElement("div");
-                    zoneStatic.style = "position: fixed; bottom: 0; left: 0; z-index: 9999; width: 500px; height: 500px;";
-                    let internal = document.createElement("div");
-                    internal.style = "position: relative; width: 100%; height: 100%;"
-                    zoneStatic.appendChild(internal);
-                    let joystick = nipplejs.create({
-                        mode: 'semi',
-                        zone: internal,
-                        color: 'red',
-                        catchDistance: 30
-                    });
-                    setTimeout(function() {
-                        joystick.on("dir", function(e, data) {
-                            let dirs = ["up", "down", "left", "right"];
-                            for (let o of dirs) {
-                                if (o !== data.direction.angle) {
-                                    fakeInput.up(o);
-                                } else {
-                                    fakeInput.down(o);
-                                }
-                            }
-                        });
-                        joystick.on("end", function() {
-                            let dirs = ["up", "down", "left", "right"];
-                            for (let o of dirs) {
-                                fakeInput.up(o);
-                            }
-                        });
-                    }, 100);
-                    document.body.appendChild(zoneStatic);
-                    const createButton = (text, key, bottom, right, bgColor) => {
-                        let button = document.createElement("div");
-                        button.style = `
-                    position: fixed; 
-                    bottom: ${bottom}; 
-                    right: ${right}; 
-                    width: 10vw; 
-                    height: 10vw; 
-                    background: ${bgColor}; 
-                    color: white; 
-                    touch-action: none; 
-                    z-index: 999999; 
-                    display: flex; 
-                    align-items: center; 
-                    justify-content: center; 
-                    font-family: sans-serif; 
-                    font-size: 3vw;
-                    border-radius: 50%;
-                `;
-                        button.innerText = text;
-                        button.addEventListener("touchstart", function(e) {
-                            e.preventDefault();
-                            fakeInput.down(key);
-                        });
-                        button.addEventListener("touchend", function(e) {
-                            e.preventDefault();
-                            fakeInput.up(key);
-                        });
-                        document.body.appendChild(button);
-                        return button;
-                    };
+// Fake keyboard input for RPG Maker
+window.fakeInput = {
+    _keys: {},
+    down: function(name) {
+        this._keys[name] = true;
+        if (window.Input) {
+            var map = { up: "up", down: "down", left: "left", right: "right",
+                        ok: "ok", escape: "escape", shift: "shift", tag: "pageup" };
+            var code = map[name];
+            if (code && Input._currentState) Input._currentState[code] = true;
+        }
+    },
+    up: function(name) {
+        this._keys[name] = false;
+        if (window.Input) {
+            var map = { up: "up", down: "down", left: "left", right: "right",
+                        ok: "ok", escape: "escape", shift: "shift", tag: "pageup" };
+            var code = map[name];
+            if (code && Input._currentState) Input._currentState[code] = false;
+        }
+    }
+};
 
-                    createButton("OK", "ok", "5vw", "5vw", "#0f08");
-                    createButton("ESC", "escape", "5vw", "15vw", "#f008");
-                    createButton("TAG", "tag", "15vw", "15vw", "#00f8");
-                    createButton("RUN", "shift", "15vw", "5vw", "#f0f8");
-                    clearInterval(i);
-                }
-            }, 100);
-        })();
-    </script>
+// Mobile controls
+(function() {
+    var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (!isMobile) return;
+
+    var tries = 0;
+    var timer = setInterval(function() {
+        tries++;
+        if (tries > 100) { clearInterval(timer); return; } // stop after ~20s
+        if (typeof nipplejs === "undefined" || !document.body) return;
+
+        clearInterval(timer);
+
+        // Joystick zone
+        var zone = document.createElement("div");
+        zone.style.cssText = "position:fixed;bottom:0;left:0;width:45vw;height:45vw;z-index:99999;touch-action:none;";
+        document.body.appendChild(zone);
+
+        var stick = nipplejs.create({
+            zone: zone,
+            mode: "static",
+            position: { left: "50%", top: "50%" },
+            color: "red",
+            size: 100
+        });
+
+        stick.on("dir", function(e, data) {
+            ["up","down","left","right"].forEach(function(d) {
+                if (data.direction && data.direction.angle === d) fakeInput.down(d);
+                else fakeInput.up(d);
+            });
+        });
+        stick.on("end", function() {
+            ["up","down","left","right"].forEach(function(d) { fakeInput.up(d); });
+        });
+
+        // Buttons
+        function btn(text, key, bottom, right, color) {
+            var b = document.createElement("div");
+            b.innerText = text;
+            b.style.cssText = "position:fixed;bottom:"+bottom+";right:"+right+
+                ";width:12vw;height:12vw;background:"+color+";color:#fff;border-radius:50%;"+
+                "display:flex;align-items:center;justify-content:center;font-size:3vw;"+
+                "z-index:99999;touch-action:none;
     </body>
 </html>
