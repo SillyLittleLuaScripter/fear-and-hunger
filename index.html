@@ -28,26 +28,35 @@
     <!-- gn math patch -->
     <script>
         // full screen the game ----------------------------------------------------------
-        function applycanvasmode() {
-            let w = 0;
-            let h = 0;
-            let maxW = window.innerWidth;
-            let maxH = window.innerHeight;
-            if ((maxW * 0.75) > maxH) {
-                h = maxH;
-                w = Math.floor((maxH / 3) * 4);
-            } else {
-                w = maxW;
-                h = Math.floor((maxW / 4) * 3);
-            }
-            document.querySelector("#GameCanvas").style.width = w + "px";
-            document.querySelector("#GameCanvas").style.height = h + "px";
-            document.querySelector("#GameVideo").style.width = w + "px";
-            document.querySelector("#GameVideo").style.height = h + "px";
-            document.querySelector("#UpperCanvas").style.width = w + "px";
-            document.querySelector("#UpperCanvas").style.height = h + "px";
-        }
-        setInterval(applycanvasmode, 100);
+       function applycanvasmode() {
+    let w = 0;
+    let h = 0;
+    let maxW = window.innerWidth;
+    let maxH = window.innerHeight;
+    if ((maxW * 0.75) > maxH) {
+        h = maxH;
+        w = Math.floor((maxH / 3) * 4);
+    } else {
+        w = maxW;
+        h = Math.floor((maxW / 4) * 3);
+    }
+    let canvas = document.querySelector("#GameCanvas");
+    let video = document.querySelector("#GameVideo");
+    let upper = document.querySelector("#UpperCanvas");
+    if (canvas) {
+        canvas.style.width = w + "px";
+        canvas.style.height = h + "px";
+    }
+    if (video) {
+        video.style.width = w + "px";
+        video.style.height = h + "px";
+    }
+    if (upper) {
+        upper.style.width = w + "px";
+        upper.style.height = h + "px";
+    }
+}
+setInterval(applycanvasmode, 100); 
 
         // support mobile ----------------------------------------------------------------
         (function() {
