@@ -56,7 +56,7 @@ var $plugins =
 {"name":"HIME_DisabledChoiceConditions","status":true,"description":"v1.4Allows you to disable individual choices in a set of options\r\nbased on custom conditions","parameters":{}},
 {"name":"HIME_LargeChoices","status":true,"description":"v1.2 - Combines multiple show choice commands into a single,\r\nlarge list.","parameters":{}},
 {"name":"HIME_ConditionalChoiceText","status":true,"description":"v1.1 - Allows you to dynamically set the text for each choice\r\nin your events.","parameters":{}},
-{"name":"physical_attack_animation","status":false,"description":"Characters draw weapons when using physical skills.\n(or any skills you configure)","parameters":{"PhysicalAttacks":"false","SkillTypes":"4"}},
+{"name":"physical_attack_animation","status":true,"description":"Characters draw weapons when using physical skills.\n(or any skills you configure)","parameters":{"PhysicalAttacks":"false","SkillTypes":"4"}},
 {"name":"WeaponSkill","status":true,"description":"Change skill id of attack for each weapon.","parameters":{}},
 {"name":"Olivia_MetaControls","status":true,"description":"<MetaControls> for RPG Maker MV version 1.6.1.","parameters":{"":"","ATTENTION!!!":"READ THE HELP FILE","Common Event on New Game":"0","Common Event on Load":"0","Variables on Save":"","Map ID":"0","Map X":"0","Map Y":"0"}}
 ];
