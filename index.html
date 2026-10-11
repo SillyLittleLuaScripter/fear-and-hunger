@@ -26,21 +26,13 @@
         <script type="text/javascript" src="js/plugins.js"></script>
         <script type="text/javascript" src="js/main.js"></script>
     <!-- gn math patch -->
-<!-- mobile + canvas patch -->
+<!-- mobile + canvas + fullscreen patch -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
 <script>
-// Safe canvas scaling
 function applycanvasmode() {
-    var maxW = window.innerWidth;
-    var maxH = window.innerHeight;
-    var w, h;
-    if ((maxW * 0.75) > maxH) {
-        h = maxH;
-        w = Math.floor((maxH / 3) * 4);
-    } else {
-        w = maxW;
-        h = Math.floor((maxW / 4) * 3);
-    }
+    var maxW = window.innerWidth, maxH = window.innerHeight, w, h;
+    if ((maxW * 0.75) > maxH) { h = maxH; w = Math.floor((maxH / 3) * 4); }
+    else { w = maxW; h = Math.floor((maxW / 4) * 3); }
     var canvas = document.querySelector("#GameCanvas");
     var video  = document.querySelector("#GameVideo");
     var upper  = document.querySelector("#UpperCanvas");
@@ -50,72 +42,76 @@ function applycanvasmode() {
 }
 setInterval(applycanvasmode, 200);
 
-// Fake keyboard input for RPG Maker
 window.fakeInput = {
-    _keys: {},
     down: function(name) {
-        this._keys[name] = true;
-        if (window.Input) {
-            var map = { up: "up", down: "down", left: "left", right: "right",
-                        ok: "ok", escape: "escape", shift: "shift", tag: "pageup" };
-            var code = map[name];
-            if (code && Input._currentState) Input._currentState[code] = true;
+        if (window.Input && Input._currentState) {
+            var map = {up:"up",down:"down",left:"left",right:"right",ok:"ok",escape:"escape",shift:"shift",tag:"pageup"};
+            if (map[name]) Input._currentState[map[name]] = true;
         }
     },
     up: function(name) {
-        this._keys[name] = false;
-        if (window.Input) {
-            var map = { up: "up", down: "down", left: "left", right: "right",
-                        ok: "ok", escape: "escape", shift: "shift", tag: "pageup" };
-            var code = map[name];
-            if (code && Input._currentState) Input._currentState[code] = false;
+        if (window.Input && Input._currentState) {
+            var map = {up:"up",down:"down",left:"left",right:"right",ok:"ok",escape:"escape",shift:"shift",tag:"pageup"};
+            if (map[name]) Input._currentState[map[name]] = false;
         }
     }
 };
 
-// Mobile controls
+function toggleFullscreen() {
+    var d = document;
+    if (!d.fullscreenElement && !d.webkitFullscreenElement) {
+        var el = d.documentElement;
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } else {
+        if (d.exitFullscreen) d.exitFullscreen();
+        else if (d.webkitExitFullscreen) d.webkitExitFullscreen();
+    }
+}
+
 (function() {
-    var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    if (!isMobile) return;
-
+    if (!/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) return;
     var tries = 0;
-    var timer = setInterval(function() {
+    var t = setInterval(function() {
         tries++;
-        if (tries > 100) { clearInterval(timer); return; } // stop after ~20s
-        if (typeof nipplejs === "undefined" || !document.body) return;
+        if (tries > 100 || typeof nipplejs === "undefined" || !document.body) {
+            if (tries > 100) clearInterval(t);
+            return;
+        }
+        clearInterval(t);
 
-        clearInterval(timer);
-
-        // Joystick zone
         var zone = document.createElement("div");
         zone.style.cssText = "position:fixed;bottom:0;left:0;width:45vw;height:45vw;z-index:99999;touch-action:none;";
         document.body.appendChild(zone);
-
-        var stick = nipplejs.create({
-            zone: zone,
-            mode: "static",
-            position: { left: "50%", top: "50%" },
-            color: "red",
-            size: 100
-        });
-
+        var stick = nipplejs.create({ zone: zone, mode: "static", position: {left:"50%",top:"50%"}, color: "red", size: 100 });
         stick.on("dir", function(e, data) {
             ["up","down","left","right"].forEach(function(d) {
-                if (data.direction && data.direction.angle === d) fakeInput.down(d);
-                else fakeInput.up(d);
+                if (data.direction && data.direction.angle === d) fakeInput.down(d); else fakeInput.up(d);
             });
         });
         stick.on("end", function() {
             ["up","down","left","right"].forEach(function(d) { fakeInput.up(d); });
         });
 
-        // Buttons
-        function btn(text, key, bottom, right, color) {
+        function btn(label, bottom, right, color, press, release) {
             var b = document.createElement("div");
-            b.innerText = text;
-            b.style.cssText = "position:fixed;bottom:"+bottom+";right:"+right+
-                ";width:12vw;height:12vw;background:"+color+";color:#fff;border-radius:50%;"+
-                "display:flex;align-items:center;justify-content:center;font-size:3vw;"+
-                "z-index:99999;touch-action:none;
-    </body>
+            b.innerText = label;
+            b.style.cssText = "position:fixed;bottom:"+bottom+";right:"+right+";width:12vw;height:12vw;background:"+color+
+                ";color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.8vw;z-index:99999;touch-action:none;user-select:none;";
+            b.addEventListener("touchstart", function(e){ e.preventDefault(); if(press) press(); });
+            b.addEventListener("touchend", function(e){ e.preventDefault(); if(release) release(); });
+            document.body.appendChild(b);
+            return b;
+        }
+        btn("OK",  "6vw",  "6vw",  "#0a08", function(){fakeInput.down("ok");}, function(){fakeInput.up("ok");});
+        btn("ESC", "6vw",  "20vw", "#a008", function(){fakeInput.down("escape");}, function(){fakeInput.up("escape");});
+        btn("RUN", "20vw", "6vw",  "#a0a8", function(){fakeInput.down("shift");}, function(){fakeInput.up("shift");});
+        btn("TAG", "20vw", "20vw", "#00a8", function(){fakeInput.down("tag");}, function(){fakeInput.up("tag");});
+        var fs = btn("FS", "6vw", "6vw", "#08a8", toggleFullscreen, null);
+        fs.style.bottom = "auto";
+        fs.style.top = "6vw";
+    }, 200);
+})();
+</script>
+</body>
 </html>
