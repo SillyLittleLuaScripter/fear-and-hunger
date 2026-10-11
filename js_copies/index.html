@@ -12,8 +12,11 @@
     </head>
     <body style="background-color: black">
         <script type="text/javascript" src="js/libs/pixi.js"></script>
+        <script type="text/javascript" src="js/libs/pixi-tilemap.js"></script>
+        <script type="text/javascript" src="js/libs/pixi-picture.js"></script>
         <script type="text/javascript" src="js/libs/fpsmeter.js"></script>
         <script type="text/javascript" src="js/libs/lz-string.js"></script>
+        <script type="text/javascript" src="js/libs/iphone-inline-video.browser.js"></script>
         <script type="text/javascript" src="js/rpg_core.js"></script>
         <script type="text/javascript" src="js/rpg_managers.js"></script>
         <script type="text/javascript" src="js/rpg_objects.js"></script>
@@ -22,5 +25,93 @@
         <script type="text/javascript" src="js/rpg_windows.js"></script>
         <script type="text/javascript" src="js/plugins.js"></script>
         <script type="text/javascript" src="js/main.js"></script>
-    </body>
+    <!-- gn math patch -->
+<!-- mobile + canvas + fullscreen patch -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+<script>
+function applycanvasmode() {
+    var maxW = window.innerWidth, maxH = window.innerHeight, w, h;
+    if ((maxW * 0.75) > maxH) { h = maxH; w = Math.floor((maxH / 3) * 4); }
+    else { w = maxW; h = Math.floor((maxW / 4) * 3); }
+    var canvas = document.querySelector("#GameCanvas");
+    var video  = document.querySelector("#GameVideo");
+    var upper  = document.querySelector("#UpperCanvas");
+    if (canvas) { canvas.style.width = w + "px"; canvas.style.height = h + "px"; }
+    if (video)  { video.style.width  = w + "px"; video.style.height  = h + "px"; }
+    if (upper)  { upper.style.width  = w + "px"; upper.style.height  = h + "px"; }
+}
+setInterval(applycanvasmode, 200);
+
+window.fakeInput = {
+    down: function(name) {
+        if (window.Input && Input._currentState) {
+            var map = {up:"up",down:"down",left:"left",right:"right",ok:"ok",escape:"escape",shift:"shift",tag:"pageup"};
+            if (map[name]) Input._currentState[map[name]] = true;
+        }
+    },
+    up: function(name) {
+        if (window.Input && Input._currentState) {
+            var map = {up:"up",down:"down",left:"left",right:"right",ok:"ok",escape:"escape",shift:"shift",tag:"pageup"};
+            if (map[name]) Input._currentState[map[name]] = false;
+        }
+    }
+};
+
+function toggleFullscreen() {
+    var d = document;
+    if (!d.fullscreenElement && !d.webkitFullscreenElement) {
+        var el = d.documentElement;
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } else {
+        if (d.exitFullscreen) d.exitFullscreen();
+        else if (d.webkitExitFullscreen) d.webkitExitFullscreen();
+    }
+}
+
+(function() {
+    if (!/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) return;
+    var tries = 0;
+    var t = setInterval(function() {
+        tries++;
+        if (tries > 100 || typeof nipplejs === "undefined" || !document.body) {
+            if (tries > 100) clearInterval(t);
+            return;
+        }
+        clearInterval(t);
+
+        var zone = document.createElement("div");
+        zone.style.cssText = "position:fixed;bottom:0;left:0;width:45vw;height:45vw;z-index:99999;touch-action:none;";
+        document.body.appendChild(zone);
+        var stick = nipplejs.create({ zone: zone, mode: "static", position: {left:"50%",top:"50%"}, color: "red", size: 100 });
+        stick.on("dir", function(e, data) {
+            ["up","down","left","right"].forEach(function(d) {
+                if (data.direction && data.direction.angle === d) fakeInput.down(d); else fakeInput.up(d);
+            });
+        });
+        stick.on("end", function() {
+            ["up","down","left","right"].forEach(function(d) { fakeInput.up(d); });
+        });
+
+        function btn(label, bottom, right, color, press, release) {
+            var b = document.createElement("div");
+            b.innerText = label;
+            b.style.cssText = "position:fixed;bottom:"+bottom+";right:"+right+";width:12vw;height:12vw;background:"+color+
+                ";color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.8vw;z-index:99999;touch-action:none;user-select:none;";
+            b.addEventListener("touchstart", function(e){ e.preventDefault(); if(press) press(); });
+            b.addEventListener("touchend", function(e){ e.preventDefault(); if(release) release(); });
+            document.body.appendChild(b);
+            return b;
+        }
+        btn("OK",  "6vw",  "6vw",  "#0a08", function(){fakeInput.down("ok");}, function(){fakeInput.up("ok");});
+        btn("ESC", "6vw",  "20vw", "#a008", function(){fakeInput.down("escape");}, function(){fakeInput.up("escape");});
+        btn("RUN", "20vw", "6vw",  "#a0a8", function(){fakeInput.down("shift");}, function(){fakeInput.up("shift");});
+        btn("TAG", "20vw", "20vw", "#00a8", function(){fakeInput.down("tag");}, function(){fakeInput.up("tag");});
+        var fs = btn("FS", "6vw", "6vw", "#08a8", toggleFullscreen, null);
+        fs.style.bottom = "auto";
+        fs.style.top = "6vw";
+    }, 200);
+})();
+</script>
+</body>
 </html>
